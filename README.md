@@ -1,16 +1,23 @@
 # Learning-Sparse-Label-Couplings-for-Multilabel-Chest-X-Ray-Diagnosis
 
-A modular PyTorch codebase for multilabel chest X‑ray classification that **learns sparse label couplings** end‑to‑end to refine logits and improve macro‑AUC. Includes MIS K‑fold splits, AMP, EMA, cosine LR with warmup, ASL/BCE losses, and flip‑TTA.
+
+> A modular PyTorch codebase for multilabel chest X‑ray classification that **learns sparse label couplings** end‑to‑end to refine logits and improve macro‑AUC. Includes MIS K‑fold splits, AMP, EMA, cosine LR with warmup, ASL/BCE losses, and flip‑TTA.
+
+<p align="center">
+  <img src="docs/diagram_placeholder.png" alt="Model overview" width="620"/>
+</p>
 
 ---
 
 ## Highlights
-- **Sparse label couplings**: learn a coupling matrix A with L1 regularization and refine logits via `z' = z + α * sigmoid(z) @ A` (A has zero diagonal). Simple, fast, and effective as a co‑occurrence prior.
+- **Sparse label couplings**: learn a coupling matrix \(A\) with L1 regularization and refine logits via
+  \[ z' = z + \alpha\,\sigma(z)\,A \]
+  yielding a simple, fast, and effective co‑occurrence prior.
 - **Solid training loop**: per‑step cosine LR with warmup, AMP, gradient clipping, EMA.
 - **Robust splitting**: MultilabelStratifiedKFold (MIS) with a graceful bucketed‑KFold fallback.
 - **Loss choices**: Asymmetric Loss (ASL) or BCE with data‑driven `pos_weight`.
 - **Inference niceties**: horizontal flip TTA and (optional) fold ensembling.
-- **Timm backbones**: switch among `seresnext101_32x4d`, `tf_efficientnet_b4_ns`, `resnet200d`, `convnext_base`, etc.
+- **Timm backbones**: one‑liner switch among `seresnext101_32x4d`, `tf_efficientnet_b4_ns`, `resnet200d`, `convnext_base`, etc.
 
 ---
 
@@ -95,11 +102,11 @@ Outputs:
 
 Method: Sparse Label Couplings
 
-We augment logits with a learned, sparse coupling matrix A (zero diagonal). Given logits z for C labels and p = sigmoid(z), we compute:
-
-z' = z + α * p @ A, with L1 penalty λ * ||A||_1 encouraging sparsity.
-
-This learns a small set of meaningful co‑occurrences (e.g., Edema ↔ Pleural Effusion) while keeping the module lightweight and inference‑friendly.
+We augment logits with a learned, sparse coupling matrix (A \in \mathbb{R}^{C\times C}) (zero diagonal). Given logits (z) for (C) labels and (p=\sigma(z)),
+[
+z’ = z + \alpha, p A, \qquad A_{ii}=0.
+]
+We apply an L1 penalty (\lambda \lVert A \rVert_1) to encourage sparsity, learning a small set of meaningful co‑occurrences (e.g., Edema ↔ Pleural Effusion) while keeping the module lightweight and inference‑friendly.
 
 Why this works
 	•	Exploits clinically plausible co‑occurrence structure without hardcoding rules.
@@ -110,9 +117,10 @@ Why this works
 
 Visualize Learned Couplings
 
-After a run, you can inspect the learned A matrix:
+After a run, you can inspect the learned (A) matrix:
 
 import torch, matplotlib.pyplot as plt
+import pandas as pd
 
 ckpt = torch.load("./outputs/tf_efficientnet_b4_ns_fold1.pth", map_location="cpu")
 A = ckpt["refiner"]["A"].numpy()  # shape (C, C)
@@ -194,22 +202,4 @@ Citation
 
 If you use this repo, please cite:
 
-@misc{srivastava2025sparsecouplings,
-  title        = {Learning Sparse Label Couplings for Multilabel Chest X-Ray Diagnosis},
-  author       = {Srivastava, Utkarsh Prakash},
-  year         = {2025},
-  howpublished = {GitHub repository},
-  url          = {https://github.com/utkarsh231/Learning-Sparse-Label-Couplings-for-Multilabel-Chest-X-Ray-Diagnosis}
-}
-
-
-⸻
-
-License
-
-This project is released under the MIT License. See LICENSE for details.
-
-Acknowledgments
-	•	timm for backbones; iterative-stratification for MIS splits.
-	•	Thanks to the open‑source medical imaging community for datasets and baselines.
-
+ incoming
